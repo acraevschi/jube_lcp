@@ -1,6 +1,6 @@
-document_id	char_range	frame_range	meta	media	name
-1	[1,53919)	[0,66823)	{"start": "0", "end": "3221", "name": "BE_2019_001_T_ELAN"}	{"audio": "BE_2019_001_A.wav"}	BE_2019_001_T_ELAN
-2	[53920,114570)	[0,99007)	{"start": "3221", "end": "7186", "name": "BE_2019_002_T_ELAN"}	{"audio": "BE_2019_002_A.wav"}	BE_2019_002_T_ELAN
-3	[114571,170760)	[0,221133)	{"start": "7186", "end": "10812", "name": "BE_2019_003_T_ELAN"}	{"audio": "BE_2019_003_A.wav"}	BE_2019_003_T_ELAN
-4	[170761,242659)	[0,388326)	{"start": "10812", "end": "15534", "name": "BE_2019_004_T_ELAN"}	{"audio": "BE_2019_004_A.wav"}	BE_2019_004_T_ELAN
-5	[242660,289614)	[0,458652)	{"start": "15534", "end": "18479", "name": "BE_2019_005_T_ELAN"}	{"audio": "BE_2019_005_A.wav"}	BE_2019_005_T_ELAN
+document_id	char_range	frame_range	meta	media
+1	[1,53919)	[0,66823)	{"start": "0", "end": "3221", "name": "BE_2019_001_T_ELAN"}	{"audio": "BE_2019_001_A.wav"}
+2	[53920,114570)	[66823,99007)	{"start": "3221", "end": "7186", "name": "BE_2019_002_T_ELAN"}	{"audio": "BE_2019_002_A.wav"}
+3	[114571,170760)	[99007,221133)	{"start": "7186", "end": "10812", "name": "BE_2019_003_T_ELAN"}	{"audio": "BE_2019_003_A.wav"}
+4	[170761,242659)	[221133,388326)	{"start": "10812", "end": "15534", "name": "BE_2019_004_T_ELAN"}	{"audio": "BE_2019_004_A.wav"}
+5	[242660,289614)	[388326,458652)	{"start": "15534", "end": "18479", "name": "BE_2019_005_T_ELAN"}	{"audio": "BE_2019_005_A.wav"}

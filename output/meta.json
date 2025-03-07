@@ -40,9 +40,6 @@
             "contains": "Token",
             "attributes": {
                 "meta": {
-                    "speaker": {
-                        "type": "text"
-                    },
                     "utterance": {
                         "type": "text"
                     },
@@ -52,6 +49,9 @@
                     "end": {
                         "type": "number"
                     }
+                },
+                "speaker": {
+                    "ref": "speaker"
                 }
             }
         },
@@ -68,11 +68,12 @@
                     "isGlobal": false,
                     "type": "text"
                 },
-                "note": {
-                    "type": "categorical",
-                    "values": [
-							"assumed_wording",
-							"other_note",
+                "meta": {
+                    "note": {
+                        "type": "categorical",
+                        "values": [
+                            "assumed_wording",
+                            "other_note",
                             "mimesis",
                             "lengthening",
                             "proper_name_abbreviation",
@@ -81,7 +82,8 @@
                             "pause",
                             "-",
                             "unintelligible"
-						]
+                        ]
+                    }
                 }
             }
         }
@@ -123,7 +125,9 @@
     "tracks": {
         "layers": {
             "Segment": {
-                "split": ["speaker"]
+                "split": [
+                    "speaker"
+                ]
             }
         }
     }
