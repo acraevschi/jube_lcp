@@ -68,20 +68,24 @@
                     "isGlobal": false,
                     "type": "text"
                 },
+                "lemma": {
+                    "isGlobal": false,
+                    "type": "text"
+                },
                 "meta": {
                     "note": {
                         "type": "categorical",
                         "values": [
-                            "assumed_wording",
-                            "other_note",
+                            "-",
                             "mimesis",
+                            "pause",
                             "lengthening",
                             "proper_name_abbreviation",
+                            "unintelligible",
+                            "other_note",
+                            "assumed_wording",
                             "anonymized",
-                            "hesitation",
-                            "pause",
-                            "-",
-                            "unintelligible"
+                            "hesitation"
                         ]
                     }
                 }
@@ -93,7 +97,12 @@
             "type": "dict",
             "keys": {
                 "gender": {
-                    "type": "categorical"
+                    "type": "categorical",
+                    "values": [
+                        "f",
+                        "m",
+                        ""
+                    ]
                 },
                 "age": {
                     "type": "number"

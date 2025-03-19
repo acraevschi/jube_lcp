@@ -58,5 +58,7 @@ T3_GP1_Mimesis	{"gender": "", "age": "", "residence": "", "living_in_bern_since"
 T3_GP2_Mimesis	{"gender": "", "age": "", "residence": "", "living_in_bern_since": "", "nationality": "", "education": "", "parents_origin": "", "parents_mother_tongue": "", "notes": ""}
 T3_Hintergrundgeräusche	{"gender": "", "age": "", "residence": "", "living_in_bern_since": "", "nationality": "", "education": "", "parents_origin": "", "parents_mother_tongue": "", "notes": ""}
 T4_Interviewer	{"gender": "", "age": "", "residence": "", "living_in_bern_since": "", "nationality": "", "education": "", "parents_origin": "", "parents_mother_tongue": "", "notes": ""}
+T4_Background_Noise	{"gender": "", "age": "", "residence": "", "living_in_bern_since": "", "nationality": "", "education": "", "parents_origin": "", "parents_mother_tongue": "", "notes": ""}
+T4_Notizen	{"gender": "", "age": "", "residence": "", "living_in_bern_since": "", "nationality": "", "education": "", "parents_origin": "", "parents_mother_tongue": "", "notes": ""}
 T5_Interviewer	{"gender": "", "age": "", "residence": "", "living_in_bern_since": "", "nationality": "", "education": "", "parents_origin": "", "parents_mother_tongue": "", "notes": ""}
 T5_Comments	{"gender": "", "age": "", "residence": "", "living_in_bern_since": "", "nationality": "", "education": "", "parents_origin": "", "parents_mother_tongue": "", "notes": ""}
