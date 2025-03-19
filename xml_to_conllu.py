@@ -3,13 +3,13 @@ import os
 import re
 import pandas as pd
 import json
-import csv
 import math
 
 conllu_folder = "./conllu_files/"
 if not os.path.exists(conllu_folder):
     os.makedirs(conllu_folder)
 
+# Read the speaker metadata (maybe more accurate to call it "Tier metadata", where some Tiers are speakers)
 person_meta = pd.read_csv("./Datensatz/Datenerhebung_2019/BE_2019_Personendaten.csv")
 person_meta["speaker_id"] = person_meta["person_id"].str.strip().str.replace(" ", "_")
 person_meta.rename(
@@ -33,38 +33,23 @@ person_meta["age"] = person_meta["age"].apply(
 
 
 # Create a lookup file for speaker metadata
-speaker_lookup_file = conllu_folder + "/global_attribute_speaker.tsv"
+speaker_lookup_file = conllu_folder + "/global_attribute_speaker.csv"
 
 
-def check_for_background(text):
-    if text[0] == "(" and text[-1] == ")":
-        if text[1:-1].isupper():
-            return True
-    elif "UNVERSTÄNDLICH" in text:
-        return True
-    return False
-
-
-def check_pauses(text):
-    if text[0] == "(" and text[-1] == ")" and all(char == "." for char in text[1:-1]):
-        return True
-    return False
-
-
-def remove_brackets(form):
+def remove_brackets(seg):
     """
-    Remove brackets from the form if they are not at the beginning and at the end of the form.
+    Remove brackets from the segment if there is no content inside them. \n
     """
-    form = form.replace("[", "").replace("]", "")
-    form = form.strip()
-    if form == "":
-        return None
-    else:
-        return form
+    seg = re.sub(r"\[\s*\]", "", seg)
+    seg = re.sub(r"\s+", " ", seg)
+    return seg
 
 
-def write_form_lemma(form, i, time_ranges, conllu_file):
-    global set_token_category
+def write_line(form, i, time_ranges, conllu_file):
+    """
+    Writes a line to the CONLL-U file. \n
+    Figures out the annotation category of the form (if there is one) and writes it to the file. \n
+    """
     # Handle variant forms by taking the first part before '/'
     if "/" in form:
         form = form.split("/")[0]
@@ -86,7 +71,7 @@ def write_form_lemma(form, i, time_ranges, conllu_file):
     elif form in ["(unverständlcih)", "(UMVERSTÄNDLICH)", "(unverständlch)"]:
         category = "unintelligible"
 
-    # Check for multiple pronunciation variants
+    # Check for multiple pronunciation variants (maybe save alternatives?)
     elif re.fullmatch(r"\([a-z]+/[a-z]+\)", form):
         category = "multiple_variants"
 
@@ -94,6 +79,7 @@ def write_form_lemma(form, i, time_ranges, conllu_file):
     elif re.fullmatch(r"\(+[A-ZÄÖÜ\s]+\)+", form):
         category = "mimesis"
 
+    # More mimesis with variable capitalization
     elif form in [
         "(gelächter)",
         "(lacht)",
@@ -167,10 +153,11 @@ xml_files = [
 conllu_file_name = conllu_folder + "conllu_output.conllu"
 # open conllu file
 conllu_file = open(conllu_file_name, "w", encoding="UTF-8")
+# write common fields to conllu file
 print("# global.columns = ID FORM LEMMA MISC", file=conllu_file)
 doc_end_prev = 0
 for k, file_name in enumerate(xml_files):
-    if k == 5:  # temporary to test
+    if k == 1:  # temporary to test
         break
     tree = ET.parse(file_name)
     root = tree.getroot()
@@ -226,12 +213,13 @@ for k, file_name in enumerate(xml_files):
                 continue
             start = time_order_values[subelement.attrib["TIME_SLOT_REF1"]]
             end = time_order_values[subelement.attrib["TIME_SLOT_REF2"]]
-            if check_for_background(text) or check_pauses(text):
-                continue
+
             segment_start = start + doc_end_prev
             segment_end = end + doc_end_prev
 
-            print(f"\n# sent_id = {utterance}", file=conllu_file)
+            print(
+                f"\n# sent_id = {utterance}", file=conllu_file
+            )  # newline before each utterance for better readability
             print(f"# speaker_id = {speaker}", file=conllu_file)
             print(f"# start = {segment_start}", file=conllu_file)
             print(f"# end = {segment_end}", file=conllu_file)
@@ -251,9 +239,7 @@ for k, file_name in enumerate(xml_files):
                         form = remove_brackets(form)
                         if form is None:
                             continue
-                        write_form_lemma(
-                            form, i, (segment_start, segment_end), conllu_file
-                        )
+                        write_line(form, i, (segment_start, segment_end), conllu_file)
 
                 elif len(token.split()) > 1:
                     continue
@@ -262,7 +248,7 @@ for k, file_name in enumerate(xml_files):
                     form = remove_brackets(token)
                     if form is None:
                         continue
-                    write_form_lemma(form, i, (segment_start, segment_end), conllu_file)
+                    write_line(form, i, (segment_start, segment_end), conllu_file)
     doc_end_prev += doc_end
 conllu_file.close()
 
@@ -279,9 +265,7 @@ person_meta_formatted.drop_duplicates(subset=["speaker_id"], inplace=True)
 # Write to TSV file
 person_meta_formatted.to_csv(
     speaker_lookup_file,
-    sep="\t",
+    sep=",",
     index=False,
-    quoting=csv.QUOTE_NONE,
-    escapechar="\\",
     encoding="UTF-8",
 )
