@@ -83,7 +83,7 @@ def process_jube(data_folder, input_folder, output_folder, limit):
         doc_id = os.path.basename(file_name).split(".")[0]
         audio_file_name = f"{doc_id.split('_T')[0]}_A.wav"
 
-        # copy audio file to media folder
+        # copy audio file to output/media folder
         audio_file_path = os.path.join(data_folder, audio_file_name)
         if os.path.exists(audio_file_path):
             audio_file_dest = os.path.join(media_folder, audio_file_name)
@@ -185,13 +185,17 @@ def main():
     parser.add_argument(
         "--data_folder",
         default="./Datensatz/Datenerhebung_2019/",
-        help="Path to the data folder",
+        help="Path to folder with corpus raw data",
     )
     parser.add_argument(
-        "--input_folder", default="./input/", help="Path to the input folder"
+        "--input_folder",
+        default="./input/",
+        help="Path to the input folder that will contain CONLL-U file",
     )
     parser.add_argument(
-        "--output_folder", default="./output/", help="Path to the output folder"
+        "--output_folder",
+        default="./output/",
+        help="Path to the output folder (to be uploaded to the platform)",
     )
 
     parser.add_argument(
