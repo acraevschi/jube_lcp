@@ -6,10 +6,10 @@ import math
 import shutil
 import argparse
 
-from jube_prep.utils import custom_split, remove_brackets, write_line
+from jube_prep.utils import custom_split, remove_brackets, write_line, clean_csv
 
 
-def process_jube(data_folder, input_folder, output_folder, limit):
+def process_jube(data_folder, input_folder, output_folder, need_clean_csv, limit):
     if not os.path.exists(input_folder):
         os.makedirs(input_folder)
 
@@ -24,7 +24,11 @@ def process_jube(data_folder, input_folder, output_folder, limit):
     shutil.copy2(meta_path, input_folder)
 
     # Read the speaker metadata (maybe more accurate to call it "Tier metadata", where some Tiers are speakers)
-    person_meta = pd.read_csv(data_folder + "BE_2019_Personendaten.csv")
+    person_meta_path = data_folder + "/BE_2019_Personendaten.csv"
+    if need_clean_csv:
+        clean_csv(person_meta_path)
+
+    person_meta = pd.read_csv(person_meta_path)
     person_meta["speaker_id"] = (
         person_meta["person_id"].str.strip().str.replace(" ", "_")
     )
@@ -184,7 +188,7 @@ def main():
     parser = argparse.ArgumentParser(description="Process JUBE corpus data")
     parser.add_argument(
         "--data_folder",
-        default="./Datensatz/Datenerhebung_2019/",
+        default="./JUBEKO/JUBEKO/Datensatz/Datenerhebung_2019",
         help="Path to folder with corpus raw data",
     )
     parser.add_argument(
@@ -199,6 +203,13 @@ def main():
     )
 
     parser.add_argument(
+        "--clean_csv",
+        action="store_true",
+        default=False,
+        help="Clean the person CSV file from empty rows and rename columns",
+    )
+
+    parser.add_argument(
         "--limit",
         type=int,
         default=None,
@@ -207,7 +218,13 @@ def main():
 
     args = parser.parse_args()
 
-    process_jube(args.data_folder, args.input_folder, args.output_folder, args.limit)
+    process_jube(
+        args.data_folder,
+        args.input_folder,
+        args.output_folder,
+        args.clean_csv,
+        args.limit,
+    )
 
 
 # Ensures main() is only executed when running this script directly

@@ -30,6 +30,12 @@
                     },
                     "name": {
                         "type": "text"
+                    },
+                    "start": {
+                        "type": "text"
+                    },
+                    "end": {
+                        "type": "text"
                     }
                 }
             }

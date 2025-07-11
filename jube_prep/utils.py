@@ -1,4 +1,5 @@
 import re
+import pandas as pd
 
 
 def remove_brackets(seg):
@@ -110,3 +111,30 @@ def custom_split(text):
     matches = re.findall(pattern, text)
 
     return matches
+
+
+def clean_csv(person_meta_path):
+    header = [
+        "person_id",
+        "Gender",
+        "Age",
+        "Place of birth",
+        "Residence",
+        "Living in Bern since",
+        "Nationality",
+        "Education",
+        "Origin of parents",
+        "Mother tongue of parents",
+        "notes",
+    ]
+
+    # Read the CSV file, skipping the first few rows with irrelevant data
+    df = pd.read_csv(person_meta_path, skiprows=4, header=None)
+
+    # Set the correct header
+    df.columns = header
+
+    # Save the cleaned CSV file
+    df.to_csv(person_meta_path, index=False)
+
+    print(f"Cleaned CSV file saved to: {person_meta_path}")
