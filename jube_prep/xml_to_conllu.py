@@ -9,7 +9,9 @@ import argparse
 from jube_prep.utils import custom_split, remove_brackets, write_line, clean_csv
 
 
-def process_jube(data_folder, input_folder, output_folder, need_clean_csv, limit):
+def process_jube(
+    data_folder, input_folder, output_folder, copy_audio, need_clean_csv, limit
+):
     if not os.path.exists(input_folder):
         os.makedirs(input_folder)
 
@@ -66,6 +68,8 @@ def process_jube(data_folder, input_folder, output_folder, need_clean_csv, limit
     print("# global.columns = ID FORM LEMMA MISC", file=conllu_file)
     doc_end_prev = 0
     for k, file_name in enumerate(xml_files):
+        # if "010" in file_name or "009" in file_name:
+        #     continue
         if k == limit:
             break
         tree = ET.parse(file_name)
@@ -85,13 +89,16 @@ def process_jube(data_folder, input_folder, output_folder, need_clean_csv, limit
             doc_end = math.ceil(max(time_order_values.values()))
 
         doc_id = os.path.basename(file_name).split(".")[0]
-        audio_file_name = f"{doc_id.split('_T')[0]}_A.wav"
+        # default audio file name
+        audio_file_name = f"{doc_id.split('_T')[0]}_A.mp3"
+        if copy_audio:
+            audio_file_name = f"{doc_id.split('_T')[0]}_A.wav"
 
-        # copy audio file to output/media folder
-        audio_file_path = os.path.join(data_folder, audio_file_name)
-        if os.path.exists(audio_file_path):
-            audio_file_dest = os.path.join(media_folder, audio_file_name)
-            shutil.copy2(audio_file_path, audio_file_dest)
+            # copy audio file to output/media folder
+            audio_file_path = os.path.join(data_folder, audio_file_name)
+            if os.path.exists(audio_file_path):
+                audio_file_dest = os.path.join(media_folder, audio_file_name)
+                shutil.copy2(audio_file_path, audio_file_dest)
 
         print(f"\n# newdoc id = {doc_id}", file=conllu_file)
         print(f"# newdoc audio = {audio_file_name}", file=conllu_file)
@@ -118,8 +125,9 @@ def process_jube(data_folder, input_folder, output_folder, need_clean_csv, limit
                     continue
                 utterance = subelement.attrib["ANNOTATION_ID"]
                 text = subelement.find("ANNOTATION_VALUE").text
-                if text is None:
+                if text is None or text.strip() == "":
                     continue
+
                 start = time_order_values[subelement.attrib["TIME_SLOT_REF1"]]
                 end = time_order_values[subelement.attrib["TIME_SLOT_REF2"]]
 
@@ -203,6 +211,13 @@ def main():
     )
 
     parser.add_argument(
+        "--copy_audio",
+        action="store_true",
+        default=False,
+        help="Copy original WAV audio files to the output/media folder",
+    )
+
+    parser.add_argument(
         "--clean_csv",
         action="store_true",
         default=False,
@@ -222,6 +237,7 @@ def main():
         args.data_folder,
         args.input_folder,
         args.output_folder,
+        args.copy_audio,
         args.clean_csv,
         args.limit,
     )

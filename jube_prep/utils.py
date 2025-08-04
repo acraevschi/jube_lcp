@@ -1,5 +1,6 @@
 import re
 import pandas as pd
+import os
 
 
 def remove_brackets(seg):
@@ -113,6 +114,44 @@ def custom_split(text):
     return matches
 
 
+def get_token_category(form):
+    """Categorize tokens based on linguistic patterns"""
+    if re.fullmatch(r"\((UNV.*ICH|unv.*ich|\?{1,3})\)", form):
+        return "unintelligible"
+    elif form in ["(unverständlcih)", "(UMVERSTÄNDLICH)", "(unverständlch)"]:
+        return "unintelligible"
+    elif re.fullmatch(r"\([a-z]+/[a-z]+\)", form):
+        return "multiple_variants"
+    elif re.fullmatch(r"\(+[A-ZÄÖÜ\s]+\)+", form) or form in [
+        "(gelächter)",
+        "(lacht)",
+        "(Biergeräusch)",
+        "(lachen)",
+        "((lacht))",
+        "(weinen)",
+        "(singend)",
+        "((schmunzelt))",
+        "(lippenflattern)",
+        "(ha)",
+    ]:
+        return "mimesis"
+    elif re.fullmatch(r"\(+[a-zäöü\s]+\)+", form):
+        return "assumed_wording"
+    elif re.fullmatch(r"\(\.{1,}\)", form) or re.fullmatch(r"\(\d+(\.\d+)?s?\)", form):
+        return "pause"
+    elif re.fullmatch(r"\(.+\)", form):
+        return "other_note"
+    elif re.fullmatch(r".*XX{1,3}.*", form) and form != "MAXX":
+        return "anonymized"
+    elif form in ["ehm", "eh", "mhm", "hm"]:
+        return "hesitation"
+    elif re.search(r":{1,3}", form):
+        return "lengthening"
+    elif form.isupper():
+        return "proper_name_abbreviation"
+    return "-"
+
+
 def clean_csv(person_meta_path):
     header = [
         "person_id",
@@ -138,3 +177,33 @@ def clean_csv(person_meta_path):
     df.to_csv(person_meta_path, index=False)
 
     print(f"Cleaned CSV file saved to: {person_meta_path}")
+
+
+def clean_empty_lines_in_output(output_folder):
+    """
+    Process all CSV files in the output_folder. For each file, if an empty line
+    is found and it is immediately followed by a non-empty line, delete the empty line.
+    Otherwise (e.g. empty line at the end of the file), raise an error.
+    """
+    csv_files = [
+        f"{output_folder}/{f}" for f in os.listdir(output_folder) if f.endswith(".csv")
+    ]
+    for csv_file in csv_files:
+        try:
+            with open(csv_file, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+        except UnicodeDecodeError:
+            with open(csv_file, "r") as f:
+                lines = f.readlines()
+
+        new_lines = []
+        for idx, line in enumerate(lines):
+            if not line.strip():
+                continue
+            else:
+                new_lines.append(line)
+
+        # Write the cleaned file back only if changes were made.
+        if new_lines != lines:
+            with open(csv_file, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
