@@ -1,0 +1,131 @@
+{
+    "meta": {
+        "name": "JuBe - Jugendsprache Schweiz Korpus",
+        "authors": "Christa Schneider, Dave Brittan, Tobias Hodel, Dominique Hess, Anna Linder",
+        "corpusDescription": "The Jugendsprache Project collects and studies ethnolectal youth language in the Canton of Bern. The project has created the first corpus of youth language in Switzerland via the cooperation of various Bernese linguists. The corpus will be made available to researchers at all academic levels for use in their own research. The goal of the project is (i) to demonstrate the relevance of youth language in sociological, ethnographic and sociolinguistic research (ii) to examine what conclusions can be drawn about linguistic innovations and change in youth language and (iii) to highlight that Switzerland, as a quadrilingual state and a country of migration, is particularly well suited for research on ethnolects and on youth languages.",
+        "date": "2021-11-05",
+        "url": "placeholder",
+        "revision": 1,
+        "mediaSlots": {
+            "audio": {
+                "mediaType": "audio",
+                "isOptional": false
+            }
+        }
+    },
+    "firstClass": {
+        "token": "Word",
+        "segment": "Sentence",
+        "document": "Clip"
+    },
+    "layer": {
+        "Clip": {
+            "anchoring": {
+                "stream": true,
+                "time": true,
+                "location": false
+            },
+            "layerType": "span",
+            "attributes": {},
+            "contains": "Sentence"
+        },
+        "Sentence": {
+            "anchoring": {
+                "stream": true,
+                "time": true,
+                "location": false
+            },
+            "layerType": "span",
+            "attributes": {
+                "speaker": {
+                    "ref": "speaker"
+                },
+                "original": {
+                    "type": "text",
+                    "nullable": false
+                }
+            },
+            "contains": "Word"
+        },
+        "Word": {
+            "anchoring": {
+                "stream": true,
+                "time": false,
+                "location": false
+            },
+            "layerType": "unit",
+            "attributes": {
+                "form": {
+                    "type": "text",
+                    "nullable": false
+                },
+                "category": {
+                    "type": "categorical",
+                    "nullable": false,
+                    "values": [
+                        "unintelligible",
+                        "-",
+                        "pause",
+                        "hesitation",
+                        "anonymized",
+                        "proper_name_abbreviation",
+                        "other_note",
+                        "assumed_wording",
+                        "lengthening",
+                        "mimesis",
+                        "multiple_variants"
+                    ]
+                }
+            }
+        }
+    },
+    "globalAttributes": {
+        "speaker": {
+            "type": "dict",
+            "keys": {
+                "person_id": {
+                    "type": "text"
+                },
+                "Gender": {
+                    "type": "text"
+                },
+                "Age": {
+                    "type": "text"
+                },
+                "Place of birth": {
+                    "type": "text"
+                },
+                "Residence": {
+                    "type": "text"
+                },
+                "Living in Bern since": {
+                    "type": "text"
+                },
+                "Nationality": {
+                    "type": "text"
+                },
+                "Education": {
+                    "type": "text"
+                },
+                "Origin of parents": {
+                    "type": "text"
+                },
+                "Mother tongue of parents": {
+                    "type": "text"
+                },
+                "notes": {
+                    "type": "text"
+                }
+            }
+        }
+    },
+    "tracks": {
+        "layers": {
+            "Sentence": {
+                "split": [
+                    "speaker"
+                ]
+            }
+        }
+    }
+}
