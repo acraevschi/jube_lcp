@@ -1,0 +1,13 @@
+{
+    "name": "JuBe - Jugendsprache Schweiz Korpus",
+    "authors": "Christa Schneider, Dave Brittan, Tobias Hodel, Dominique Hess, Anna Linder",
+    "date": "2021-11-05",
+    "revision": 1,
+    "description": "The Jugendsprache Project collects and studies ethnolectal youth language in the Canton of Bern. The project has created the first corpus of youth language in Switzerland via the cooperation of various Bernese linguists. The corpus will be made available to researchers at all academic levels for use in their own research. The goal of the project is (i) to demonstrate the relevance of youth language in sociological, ethnographic and sociolinguistic research (ii) to examine what conclusions can be drawn about linguistic innovations and change in youth language and (iii) to highlight that Switzerland, as a quadrilingual state and a country of migration, is particularly well suited for research on ethnolects and on youth languages.",
+    "mediaSlots": {
+        "audio": {
+            "mediaType": "audio",
+            "isOptional": false
+        }
+    }
+}

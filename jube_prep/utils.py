@@ -207,3 +207,36 @@ def clean_empty_lines_in_output(output_folder):
         if new_lines != lines:
             with open(csv_file, "w", encoding="utf-8") as f:
                 f.writelines(new_lines)
+
+
+def normalize_speaker_id(speaker_id):
+    s = speaker_id.lower()
+    speaker_id = speaker_id.strip().replace(" ", "_")
+    # Map notes/comments variants
+    if any(
+        kw in s.lower() for kw in ["notes", "notizen", "comments", "comment", "notiz"]
+    ):
+        return "Notes"
+    # Map background noise variants
+    elif any(
+        kw in s.lower()
+        for kw in [
+            "background_noise",
+            "hintergrundgeräusche",
+            "backgroundgeräusche",
+            "background",
+            "hintergrund",
+            "backgroundgeraeusche",
+        ]
+    ):
+        return "Background_noise"
+    # Map interviewer variants
+    elif any(kw in s for kw in ["interviewer", "interviewerin"]):
+        return "Interviewer"
+    # Map other special categories
+    elif "mimesis" in s:
+        return "Mimesis"
+    elif "external_person" in s or "freund" in s:
+        return "External_person"
+    # Return original if not a special category
+    return speaker_id

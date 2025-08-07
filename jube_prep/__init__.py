@@ -1,1 +1,1 @@
-from .xml_to_conllu import process_jube
+from .jube_builder import process_jube

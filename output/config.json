@@ -16,10 +16,10 @@
     "firstClass": {
         "token": "Word",
         "segment": "Sentence",
-        "document": "Clip"
+        "document": "Recording"
     },
     "layer": {
-        "Clip": {
+        "Recording": {
             "anchoring": {
                 "stream": true,
                 "time": true,
@@ -50,7 +50,7 @@
         "Word": {
             "anchoring": {
                 "stream": true,
-                "time": false,
+                "time": true,
                 "location": false
             },
             "layerType": "unit",
@@ -83,6 +83,9 @@
         "speaker": {
             "type": "dict",
             "keys": {
+                "id": {
+                    "type": "text"
+                },
                 "person_id": {
                     "type": "text"
                 },
