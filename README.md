@@ -28,7 +28,7 @@ The script produces:
 - `meta.json` (copied to the output folder)
 - LCP corpus files in the output folder
 - `global_attribute_speaker.csv` (in the output folder, with speaker metadata)
-- Audio files copied to `output/media/` (if `--copy_audio` is set)
+- Audio files copied to `output/media/` (if `--copy_audio` is set). Best to transform WAV files to MP3 format before running the script. and not utilizing it.
 - Updated `config.json` in the output folder, with a `"tracks"` key for LCP compatibility
 
 ## Notes
@@ -36,8 +36,6 @@ The script produces:
 - The script now ensures that duplicate speaker IDs are removed from `global_attribute_speaker.csv`.
 - The output is cleaned of empty lines for compatibility.
 - The `"tracks"` key is automatically added to `config.json` to support LCP's layer splitting by speaker.
-- Word timing is proportionally distributed within each sentence, improving alignment accuracy.
+- Word timing is distributed proportionally to character count of a word within each sentence.
 
 You can use `jube_prep` in the command line or run `python -m jube_prep`.
-
-For further processing, you may want to convert the output to
