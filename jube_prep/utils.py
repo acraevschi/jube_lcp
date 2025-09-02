@@ -114,7 +114,7 @@ def custom_split(text):
     return matches
 
 
-def get_token_category(form):
+def get_token_note(form):
     """Categorize tokens based on linguistic patterns"""
     if re.fullmatch(r"\((UNV.*ICH|unv.*ich|\?{1,3})\)", form):
         return "unintelligible"
@@ -240,3 +240,17 @@ def normalize_speaker_id(speaker_id):
         return "External_person"
     # Return original if not a special category
     return speaker_id
+
+
+def clean_speaker_age(age):
+    """
+    Cleans and standardizes the age field from the metadata.
+    Handles various formats and returns an integer age or None if invalid.
+    """
+    if not age:
+        return -1
+    elif "/" in age:
+        age = age.split("/")[0].strip()
+        return int(age)
+    else:
+        return int(age)

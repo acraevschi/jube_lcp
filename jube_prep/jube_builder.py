@@ -11,9 +11,10 @@ from jube_prep.utils import (
     custom_split,
     remove_brackets,
     clean_csv,
-    get_token_category,
+    get_token_note,
     clean_empty_lines_in_output,
     normalize_speaker_id,
+    clean_speaker_age,
 )
 
 
@@ -53,6 +54,12 @@ def process_jube(
     person_meta = pd.read_csv(person_meta_path)
     person_meta = person_meta.fillna("")
     person_meta["speaker_id"] = person_meta["person_id"].apply(normalize_speaker_id)
+    person_meta["Age"] = person_meta["Age"].apply(clean_speaker_age).astype(int)
+    # Lowercase and replace spaces with underscores in column names
+    person_meta.columns = person_meta.columns.str.lower().str.replace(" ", "_")
+    person_meta = person_meta.drop_duplicates(
+        subset=["speaker_id"], keep="first"
+    ).reset_index(drop=True)
 
     # Create global speaker attributes
     speakers = {}
@@ -65,7 +72,12 @@ def process_jube(
             {col: row[col] for col in person_meta.columns if col != "speaker_id"}
         )
         # Create global attribute
-        speakers[speaker_id] = corpus.Speaker(attrs)
+        if speaker_id not in speakers:
+            # Ensure person_id exists (optional safeguard)
+            if "person_id" not in attrs or attrs.get("person_id", "") == "":
+                attrs["person_id"] = speaker_id
+
+            speakers[speaker_id] = corpus.Speaker(attrs)
 
     # Process XML files
     xml_files = [f for f in os.listdir(data_folder) if f.endswith(".xml")]
@@ -127,21 +139,6 @@ def process_jube(
                 sentence.speaker = speakers[speaker_id]
                 sentence.original = text
 
-                ### Doesn't accomodate word timing:
-                # # Convert times to frames (25fps)
-                # start_time, end_time = int(start * 25), int(end * 25)
-                # if start_time <= end_time:
-                #     end_time += 1
-                # sentence.set_time(start_time + doc_end_prev, end_time + doc_end_prev)
-
-                # # Tokenize and add words
-                # for token in custom_split(text):
-                #     clean_token = remove_brackets(token)
-                #     if not clean_token:
-                #         continue
-                #     category = get_token_category(token)
-                #     sentence.Word(clean_token, category=category)
-
                 ### Accomodates word timing:
                 # Convert times to frames (25fps)
                 start_frame = int(start * 25)
@@ -159,10 +156,10 @@ def process_jube(
                     clean_token = remove_brackets(token)
                     if not clean_token:
                         continue
-                    category = get_token_category(token)
+                    note = get_token_note(token)
                     tokens.append(token)
                     clean_tokens.append(clean_token)
-                    categories.append(category)
+                    categories.append(note)
 
                 # Set sentence time (absolute timeline)
                 sentence.set_time(abs_start, abs_end)
@@ -173,7 +170,7 @@ def process_jube(
                     total_frames = abs_end - abs_start
                     current_frame = abs_start
 
-                    for i, (clean_token, category) in enumerate(
+                    for i, (clean_token, note) in enumerate(
                         zip(clean_tokens, categories)
                     ):
                         # Calculate proportional duration for this token
@@ -187,7 +184,7 @@ def process_jube(
                             token_end = current_frame + token_duration
 
                         # Create word with calculated time span
-                        word = sentence.Word(clean_token, category=category)
+                        word = sentence.Word(clean_token, note=note)
 
                         if current_frame >= token_end:
                             word.set_time(token_end - 1, token_end)
@@ -222,13 +219,6 @@ def process_jube(
     # Save the updated configuration.
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=4, ensure_ascii=False)
-
-    # check for duplicate speaker IDs
-    output_global_attribute = pd.read_csv("output/global_attribute_speaker.csv")
-    removed_duplicates = output_global_attribute[
-        ~output_global_attribute.duplicated(subset=["speaker_id"], keep="first")
-    ]
-    removed_duplicates.to_csv("output/global_attribute_speaker.csv", index=False)
 
 
 def main():
