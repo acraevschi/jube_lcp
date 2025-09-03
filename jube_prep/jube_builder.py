@@ -117,10 +117,16 @@ def process_jube(
 
             # Add new speakers to metadata (with 'id' field)
             if speaker_id not in speakers:
-                attrs = {"id": speaker_id}  # Add 'id' field
+                attrs = {"id": speaker_id}
+                # Set all other attributes to empty string except 'age'
                 attrs.update(
-                    {key: "" for key in person_meta.columns if key != "speaker_id"}
+                    {
+                        key: ""
+                        for key in person_meta.columns
+                        if key not in ["speaker_id", "age"]
+                    }
                 )
+                attrs["age"] = -1  # Set age to -1 for unknown speakers
                 attrs["person_id"] = speaker_id  # Ensure person_id is set
                 speakers[speaker_id] = corpus.Speaker(attrs)
 
