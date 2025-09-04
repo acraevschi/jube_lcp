@@ -210,16 +210,25 @@ def clean_empty_lines_in_output(output_folder):
 
 
 def normalize_speaker_id(speaker_id):
+    """
+    Normalizes speaker IDs, identifying special tiers like 'Notes' and 'Background_noise'.
+    For 'Notes', it returns a tuple of ('Notes', original_speaker_id).
+    For others, it returns a tuple of (normalized_id, None).
+    """
     s = speaker_id.lower()
-    speaker_id = speaker_id.strip().replace(" ", "_")
     # Map notes/comments variants
-    if any(
-        kw in s.lower() for kw in ["notes", "notizen", "comments", "comment", "notiz"]
-    ):
-        return "Notes"
+    if any(kw in s for kw in ["notes", "notizen", "comments", "comment", "notiz"]):
+        # Extract original speaker ID by removing the note part
+        original_id = re.sub(
+            r"[-_\s]*(notes|notizen|comments|comment|notiz)",
+            "",
+            speaker_id,
+            flags=re.IGNORECASE,
+        ).strip()
+        return "Notes", original_id
     # Map background noise variants
     elif any(
-        kw in s.lower()
+        kw in s
         for kw in [
             "background_noise",
             "hintergrundgeräusche",
@@ -229,17 +238,17 @@ def normalize_speaker_id(speaker_id):
             "backgroundgeraeusche",
         ]
     ):
-        return "Background_noise"
+        return "BackgroundNoise", None
     # Map interviewer variants
     elif any(kw in s for kw in ["interviewer", "interviewerin"]):
-        return "Interviewer"
+        return "Interviewer", None
     # Map other special categories
     elif "mimesis" in s:
-        return "Mimesis"
+        return "Mimesis", None
     elif "external_person" in s or "freund" in s:
-        return "External_person"
+        return "External_person", None
     # Return original if not a special category
-    return speaker_id
+    return speaker_id.strip().replace(" ", "_"), None
 
 
 def clean_speaker_age(age):

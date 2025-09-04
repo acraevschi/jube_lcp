@@ -18,6 +18,11 @@ from jube_prep.utils import (
 )
 
 
+# keep only the normalized string id (first item of the tuple)
+def sid(x: str) -> str:
+    return normalize_speaker_id(str(x))[0]
+
+
 def process_jube(
     data_folder,
     output_folder,
@@ -53,10 +58,16 @@ def process_jube(
 
     person_meta = pd.read_csv(person_meta_path)
     person_meta = person_meta.fillna("")
-    person_meta["speaker_id"] = person_meta["person_id"].apply(normalize_speaker_id)
+
+    # keep age as int before renaming columns
     person_meta["Age"] = person_meta["Age"].apply(clean_speaker_age).astype(int)
+
     # Lowercase and replace spaces with underscores in column names
     person_meta.columns = person_meta.columns.str.lower().str.replace(" ", "_")
+
+    # normalized speaker id (string, not tuple)
+    person_meta["speaker_id"] = person_meta["person_id"].apply(sid)
+
     person_meta = person_meta.drop_duplicates(
         subset=["speaker_id"], keep="first"
     ).reset_index(drop=True)
@@ -64,20 +75,27 @@ def process_jube(
     # Create global speaker attributes
     speakers = {}
     for _, row in person_meta.iterrows():
-        speaker_id = row["speaker_id"]
-        # Add 'id' field with person_id value
-        attrs = {"id": speaker_id}  # Add this first
-        # Add other attributes
+        speaker_id = row["speaker_id"]  # string id
+        attrs = {"id": speaker_id}
         attrs.update(
             {col: row[col] for col in person_meta.columns if col != "speaker_id"}
         )
-        # Create global attribute
+        if "person_id" not in attrs or attrs.get("person_id", "") == "":
+            attrs["person_id"] = speaker_id
         if speaker_id not in speakers:
-            # Ensure person_id exists (optional safeguard)
-            if "person_id" not in attrs or attrs.get("person_id", "") == "":
-                attrs["person_id"] = speaker_id
-
             speakers[speaker_id] = corpus.Speaker(attrs)
+
+    # Helper to create a default/unknown speaker on the fly
+    def ensure_speaker_exists(spk_id: str):
+        if spk_id not in speakers:
+            attrs = {"id": spk_id, "person_id": spk_id}
+            # include all metadata fields with empty defaults, except "speaker_id" and "age"
+            for key in person_meta.columns:
+                if key not in ("speaker_id", "age", "person_id"):
+                    attrs[key] = ""
+            attrs["age"] = -1
+            speakers[spk_id] = corpus.Speaker(attrs)
+        return speakers[spk_id]
 
     # Process XML files
     xml_files = [f for f in os.listdir(data_folder) if f.endswith(".xml")]
@@ -96,7 +114,8 @@ def process_jube(
         if copy_audio:
             src = os.path.join(data_folder, audio_file)
             dst = os.path.join(media_folder, audio_file)
-            shutil.copy2(src, dst) if os.path.exists(src) else None
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
 
         # Create document (Recording)
         recording = corpus.Recording(name=doc_id)
@@ -109,43 +128,26 @@ def process_jube(
             for slot in time_order.findall("TIME_SLOT"):
                 slot_id = slot.get("TIME_SLOT_ID")
                 time_ms = int(slot.get("TIME_VALUE"))
-                time_slots[slot_id] = time_ms / 1000.0  # Convert to seconds
+                time_slots[slot_id] = time_ms / 1000.0  # seconds
 
         # Process linguistic tiers
         for tier in root.findall("TIER"):
-            speaker_id = normalize_speaker_id(tier.get("TIER_ID"))
+            tier_id = tier.get("TIER_ID")
+            layer_name, original_speaker_id = normalize_speaker_id(tier_id)
 
-            # Add new speakers to metadata (with 'id' field)
-            if speaker_id not in speakers:
-                attrs = {"id": speaker_id}
-                # Set all other attributes to empty string except 'age'
-                attrs.update(
-                    {
-                        key: ""
-                        for key in person_meta.columns
-                        if key not in ["speaker_id", "age"]
-                    }
-                )
-                attrs["age"] = -1  # Set age to -1 for unknown speakers
-                attrs["person_id"] = speaker_id  # Ensure person_id is set
-                speakers[speaker_id] = corpus.Speaker(attrs)
-
-            # Process annotations
             for anno in tier.findall(".//ALIGNABLE_ANNOTATION"):
                 text_elem = anno.find("ANNOTATION_VALUE")
-                if text_elem.text is None or text_elem.text.strip() == "":
+                if (
+                    text_elem is None
+                    or text_elem.text is None
+                    or text_elem.text.strip() == ""
+                ):
                     continue
 
                 text = text_elem.text.strip()
                 start = time_slots[anno.get("TIME_SLOT_REF1")]
                 end = time_slots[anno.get("TIME_SLOT_REF2")]
 
-                # Create sentence
-                sentence = recording.Sentence()
-                sentence.speaker = speakers[speaker_id]
-                sentence.original = text
-
-                ### Accomodates word timing:
                 # Convert times to frames (25fps)
                 start_frame = int(start * 25)
                 end_frame = int(end * 25)
@@ -154,21 +156,46 @@ def process_jube(
                 abs_start = start_frame + doc_end_prev
                 abs_end = end_frame + doc_end_prev
 
-                # Tokenize and process words
-                tokens = []
-                clean_tokens = []
-                categories = []
-                for token in custom_split(text):
-                    clean_token = remove_brackets(token)
-                    if not clean_token:
-                        continue
-                    note = get_token_note(token)
-                    tokens.append(token)
-                    clean_tokens.append(clean_token)
-                    categories.append(note)
+                # ----- Recording-level layers: Notes / BackgroundNoise -----
+                if layer_name in ("Notes", "BackgroundNoise"):
+                    if layer_name == "Notes":
+                        # resolve the referenced speaker
+                        spk_key = (
+                            sid(original_speaker_id) if original_speaker_id else None
+                        )
+                        speaker_ref = (
+                            ensure_speaker_exists(spk_key) if spk_key else None
+                        )
+                        annotation = recording.Notes(text=text, speaker=speaker_ref)
+                    else:
+                        annotation = recording.BackgroundNoise(text=text)
+                    annotation.set_time(abs_start, abs_end)
+                    annotation.make()
+                    continue  # very important
 
-                # Set sentence time (absolute timeline)
+                # ----- Regular speaker tier -----
+                speaker_id = sid(layer_name)
+                speaker_ref = ensure_speaker_exists(speaker_id)
+
+                # Create sentence
+                sentence = recording.Sentence()
+                sentence.speaker = speaker_ref
+                sentence.original = text
                 sentence.set_time(abs_start, abs_end)
+
+                # Tokenize and process words
+                clean_tokens = []
+                notes_for_tokens = []
+
+                for token in custom_split(text):
+                    clean_token = remove_brackets(
+                        token
+                    )  # if it's just a note, becomes ""
+                    if not clean_token:
+                        continue  # do not create token for pure notes
+                    note_val = get_token_note(token) or ""  # never None
+                    clean_tokens.append(clean_token)
+                    notes_for_tokens.append(note_val)
 
                 # Calculate word times only if we have valid tokens
                 if clean_tokens:
@@ -176,43 +203,46 @@ def process_jube(
                     total_frames = abs_end - abs_start
                     current_frame = abs_start
 
-                    for i, (clean_token, note) in enumerate(
-                        zip(clean_tokens, categories)
+                    for i, (clean_token, note_val) in enumerate(
+                        zip(clean_tokens, notes_for_tokens)
                     ):
-                        # Calculate proportional duration for this token
-                        token_ratio = len(clean_token) / total_chars
+                        token_ratio = (
+                            len(clean_token) / total_chars if total_chars else 0
+                        )
                         token_duration = round(token_ratio * total_frames)
 
-                        # Handle last token separately to account for rounding errors
-                        if i == len(clean_tokens) - 1:
-                            token_end = abs_end
-                        else:
-                            token_end = current_frame + token_duration
+                        token_end = (
+                            abs_end
+                            if i == len(clean_tokens) - 1
+                            else current_frame + token_duration
+                        )
 
-                        # Create word with calculated time span
-                        word = sentence.Word(clean_token, note=note)
+                        # Create word; attach "note" only when there is a note
+                        if note_val:
+                            word = sentence.Word(clean_token, note=note_val)
+                        else:
+                            word = sentence.Word(clean_token)
 
                         if current_frame >= token_end:
                             word.set_time(token_end - 1, token_end)
                         else:
                             word.set_time(current_frame, token_end)
 
-                        # Move current frame pointer forward
                         current_frame = token_end
 
                 sentence.make()
+
         recording.make()
         doc_end_prev = recording.get_time()[-1]
 
     # Finalize corpus
     corpus.make(output_folder)
 
-    # at least on Windows the output is produced with empty lines in-between the normal lines, need to clean it
+    # Remove spurious empty lines produced on some platforms
     clean_empty_lines_in_output(output_folder)
 
-    ### We need to add the "tracks" key to the config.json file
+    # Add tracks config to split Sentence by speaker
     config_path = os.path.join(output_folder, "config.json")
-    # Load the created configuration.
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
@@ -220,9 +250,13 @@ def process_jube(
         with open(config_path, "r") as f:
             config = json.load(f)
 
-    # Add the "tracks" key.
-    config["tracks"] = {"layers": {"Sentence": {"split": ["speaker"]}}}
-    # Save the updated configuration.
+    config["tracks"] = {
+        "layers": {
+            "Notes": {},
+            "BackgroundNoise": {},
+            "Sentence": {"split": ["speaker"]},
+        }
+    }
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=4, ensure_ascii=False)
 

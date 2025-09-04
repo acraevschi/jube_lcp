@@ -77,6 +77,37 @@
                     ]
                 }
             }
+        },
+        "Notes": {
+            "anchoring": {
+                "stream": true,
+                "time": true,
+                "location": false
+            },
+            "layerType": "unit",
+            "attributes": {
+                "text": {
+                    "type": "text",
+                    "nullable": false
+                },
+                "speaker": {
+                    "ref": "speaker"
+                }
+            }
+        },
+        "BackgroundNoise": {
+            "anchoring": {
+                "stream": true,
+                "time": true,
+                "location": false
+            },
+            "layerType": "unit",
+            "attributes": {
+                "text": {
+                    "type": "text",
+                    "nullable": false
+                }
+            }
         }
     },
     "globalAttributes": {
@@ -124,6 +155,8 @@
     },
     "tracks": {
         "layers": {
+            "Notes": {},
+            "BackgroundNoise": {},
             "Sentence": {
                 "split": [
                     "speaker"
